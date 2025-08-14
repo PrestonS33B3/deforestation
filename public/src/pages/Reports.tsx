@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
-import { Upload, Image, Calendar, MapPin, AlertTriangle, CheckCircle } from "lucide-react";
+import { Upload, Image, Calendar, MapPin, AlertTriangle, CheckCircle, FileInput } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
 const Reports = () => {
@@ -37,6 +37,12 @@ const Reports = () => {
         description: `${file.name} is being analyzed by our AI system`,
       });
     }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleIconClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -256,7 +262,15 @@ const Reports = () => {
               ) : (
                 <div className="aspect-video bg-forest-50 rounded-lg border-2 border-dashed border-forest-200 flex items-center justify-center">
                   <div className="text-center">
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-forest-400" />
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-forest-400" 
+                    onClick={handleIconClick}
+                    />
+                    <Input
+                    ref={fileInputRef}
+                    id="attachment"
+                    type="file"
+                    className="hidden"
+                    />
                     <p className="text-sm text-forest-600">Upload an image to see AI analysis</p>
                   </div>
                 </div>
