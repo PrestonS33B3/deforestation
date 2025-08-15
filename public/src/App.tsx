@@ -11,6 +11,7 @@ import Alerts from "./pages/Alerts";
 import Community from "./pages/Community";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
+import AuthPage from "./pages/Auth";
 import { AppSidebar } from "./AppSidebar";
 import { Header } from "./components/Header";
 
@@ -35,6 +36,7 @@ const App = () => (
                   <Route path="/alerts" element={<Alerts />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/auth" element={<AuthPage/>}/>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
