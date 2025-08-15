@@ -6,29 +6,80 @@ import { Label } from "../components/ui/label";
 import { User, Mail, Lock, UserPlus, LogIn } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
-const AuthPage = () => {
+const AuthPage = ({ setIsAuthenticated }: { setIsAuthenticated: (val: boolean) => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    const formData = new FormData(event.target as HTMLFormElement);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const full_name = formData.get("name") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (!isLogin && password !== confirmPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please make sure both password fields match.",
+        variant: "destructive",
+      });
       setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const endpoint = isLogin ? "/api/login" : "/api/signup";
+      const payload = isLogin
+        ? { email, password }
+        : { email, password, full_name, role: "user" };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
       toast({
         title: isLogin ? "Login successful" : "Account created",
         description: isLogin
           ? "Welcome back!"
           : "You can now log in with your new account.",
       });
-    }, 1500);
+
+      if (isLogin) {
+        // Store token if your backend returns one
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+        setIsAuthenticated(true);
+      } else {
+        setIsLogin(true); // Switch to login after signup
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <Card className="max-w-4xl w-full shadow-xl grid md:grid-cols-2 overflow-hidden">
-        {/* Left Side - Illustration & Welcome */}
+        {/* Left Side */}
         <div className="hidden md:flex flex-col justify-center items-center bg-gradient-to-b from-blue-600 to-blue-700 text-white p-8 space-y-6">
           {isLogin ? <LogIn size={48} /> : <UserPlus size={48} />}
           <h2 className="text-3xl font-bold font-poppins">
@@ -65,6 +116,7 @@ const AuthPage = () => {
                     <User className="absolute left-3 top-3 text-blue-400" size={18} />
                     <Input
                       id="name"
+                      name="name"
                       placeholder="Jane Doe"
                       className="pl-10 border-blue-200 focus:border-blue-500 h-11"
                       required
@@ -81,6 +133,7 @@ const AuthPage = () => {
                   <Mail className="absolute left-3 top-3 text-blue-400" size={18} />
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="you@example.com"
                     className="pl-10 border-blue-200 focus:border-blue-500 h-11"
@@ -97,6 +150,7 @@ const AuthPage = () => {
                   <Lock className="absolute left-3 top-3 text-blue-400" size={18} />
                   <Input
                     id="password"
+                    name="password"
                     type="password"
                     placeholder="••••••••"
                     className="pl-10 border-blue-200 focus:border-blue-500 h-11"
@@ -114,6 +168,7 @@ const AuthPage = () => {
                     <Lock className="absolute left-3 top-3 text-blue-400" size={18} />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
                       placeholder="••••••••"
                       className="pl-10 border-blue-200 focus:border-blue-500 h-11"
