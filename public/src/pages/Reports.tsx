@@ -7,49 +7,71 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
-import { Upload, Image, Calendar, MapPin, AlertTriangle, CheckCircle, FileInput } from "lucide-react";
+import { Upload, Image, Calendar, MapPin, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
 const Reports = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [aiResult, setAiResult] = useState<{ deforestation_probability: number } | null>(null);
   const { toast } = useToast();
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      // Simulate AI analysis progress
-      setAnalysisProgress(0);
-      const interval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
-      
-      toast({
-        title: "Image uploaded successfully",
-        description: `${file.name} is being analyzed by our AI system`,
-      });
-    }
-  };
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleIconClick = () => {
     fileInputRef.current?.click();
   };
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setAnalysisProgress(0);
+    setAiResult(null);
+
+    // Simulate progress visually while API is processing
+    const interval = setInterval(() => {
+      setAnalysisProgress(prev => (prev >= 90 ? 90 : prev + 10));
+    }, 200);
+
+    // Send the file to your Flask backend
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to analyze image");
+
+      const data = await response.json();
+      setAiResult(data);
+
+      clearInterval(interval);
+      setAnalysisProgress(100);
+
+      toast({
+        title: "Image analyzed successfully",
+        description: `Deforestation probability: ${(data.deforestation_probability * 100).toFixed(2)}%`,
+      });
+    } catch (error) {
+      clearInterval(interval);
+      setAnalysisProgress(0);
+      toast({
+        title: "Analysis failed",
+        description: "Unable to analyze the image. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
       toast({
@@ -69,7 +91,9 @@ const Reports = () => {
           </div>
           <h1 className="text-3xl font-bold text-forest-800 font-poppins">Report Deforestation</h1>
         </div>
-        <p className="text-forest-600">Help protect Kenya's forests by reporting suspected deforestation activity. Your reports help us respond quickly to threats.</p>
+        <p className="text-forest-600">
+          Help protect Kenya's forests by reporting suspected deforestation activity. Your reports help us respond quickly to threats.
+        </p>
       </div>
 
       <div className="grid xl:grid-cols-3 gap-6">
@@ -153,7 +177,7 @@ const Reports = () => {
                   />
                 </div>
 
-                {/* Enhanced Image Upload */}
+                {/* Image Upload */}
                 <div className="space-y-3">
                   <Label className="text-forest-700 font-medium">Evidence (Photos/Satellite Images)</Label>
                   <div className="border-2 border-dashed border-forest-300 rounded-lg p-8 text-center bg-forest-50/50 hover:bg-forest-50 transition-colors">
@@ -163,13 +187,14 @@ const Reports = () => {
                       onChange={handleFileSelect}
                       className="hidden"
                       id="file-upload"
+                      ref={fileInputRef}
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <Upload className="h-12 w-12 mx-auto mb-3 text-forest-600" />
                       <p className="text-lg font-medium text-forest-700 mb-1">Click to upload image</p>
                       <p className="text-sm text-forest-500">PNG, JPG up to 10MB • Supports satellite imagery</p>
                     </label>
-                    
+
                     {selectedFile && (
                       <div className="mt-6 p-4 bg-white rounded-lg border border-forest-200">
                         <div className="flex items-center gap-3 mb-3">
@@ -185,7 +210,7 @@ const Reports = () => {
                             {analysisProgress === 100 ? 'Analysis Complete' : 'Analyzing'}
                           </Badge>
                         </div>
-                        
+
                         {analysisProgress < 100 && (
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
@@ -234,20 +259,16 @@ const Reports = () => {
                       <p className="text-sm font-medium text-forest-700">Image processed successfully</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
-                     <div className="flex justify-between items-center p-3 bg-forest-50 rounded-lg">
-                       <span className="text-sm font-medium text-forest-700">Deforestation Probability:</span>
-                       <Badge className="bg-orange-100 text-orange-700">0% No Risk</Badge>
-                     </div>
-                     <div className="flex justify-between items-center p-3 bg-forest-50 rounded-lg">
-                       <span className="text-sm font-medium text-forest-700">Forest Type Detected:</span>
-                       <span className="text-sm text-forest-600">None</span>
-                     </div>
-                     <div className="flex justify-between items-center p-3 bg-forest-50 rounded-lg">
-                       <span className="text-sm font-medium text-forest-700">Estimated Affected Area:</span>
-                       <span className="text-sm text-forest-600">0 hectares</span>
-                     </div>
+                    <div className="flex justify-between items-center p-3 bg-forest-50 rounded-lg">
+                      <span className="text-sm font-medium text-forest-700">Deforestation Probability:</span>
+                      <Badge className="bg-orange-100 text-orange-700">
+                        {aiResult
+                          ? `${(aiResult.deforestation_probability * 50000).toFixed(2)}% ${aiResult.deforestation_probability > 0.5 ? 'High Risk' : 'Low Risk'}`
+                          : '0% No Risk'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               ) : selectedFile ? (
@@ -262,15 +283,8 @@ const Reports = () => {
               ) : (
                 <div className="aspect-video bg-forest-50 rounded-lg border-2 border-dashed border-forest-200 flex items-center justify-center">
                   <div className="text-center">
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-forest-400" 
-                    onClick={handleIconClick}
-                    />
-                    <Input
-                    ref={fileInputRef}
-                    id="attachment"
-                    type="file"
-                    className="hidden"
-                    />
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-forest-400" onClick={handleIconClick} />
+                    <Input ref={fileInputRef} id="attachment" type="file" className="hidden" />
                     <p className="text-sm text-forest-600">Upload an image to see AI analysis</p>
                   </div>
                 </div>
