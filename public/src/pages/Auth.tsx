@@ -5,11 +5,16 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { User, Mail, Lock, UserPlus, LogIn } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import Dashboard from "./Dashboard";
+import { Navigate, useNavigate } from "react-router-dom";
+
 
 const AuthPage = ({ setIsAuthenticated }: { setIsAuthenticated: (val: boolean) => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate(); // ✅ Hook for programmatic navigation
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,7 +67,8 @@ const AuthPage = ({ setIsAuthenticated }: { setIsAuthenticated: (val: boolean) =
           localStorage.setItem("authToken", data.token);
         }
         setIsAuthenticated(true);
-      } else {
+        navigate("/dashboard");
+    } else {
         setIsLogin(true); // Switch to login after signup
       }
     } catch (err: any) {
