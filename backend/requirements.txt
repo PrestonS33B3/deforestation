@@ -3,3 +3,4 @@ supabase
 python-dotenv
 PyJWT
 flask-cors
+tensorflow
