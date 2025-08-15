@@ -6,6 +6,15 @@ from PIL import Image
 analyze_bp = Blueprint("analyze", __name__)
 model = tf.keras.models.load_model("deforestationModel.h5")
 
+def preprocess_image(image_bytes):
+    from io import BytesIO
+    img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    img = img.resize((224, 224))  # or the size your model expects
+    img_array = np.array(img) / 255.0  # normalize to [0,1]
+    img_array = np.expand_dims(img_array, axis=0)  # add batch dimension
+    return img_array
+
+
 @analyze_bp.route("/analyze", methods=["POST"])
 def analyze_image():
     if "file" not in request.files:
