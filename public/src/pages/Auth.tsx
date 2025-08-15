@@ -32,7 +32,7 @@ const AuthPage = ({ setIsAuthenticated }: { setIsAuthenticated: (val: boolean) =
     }
 
     try {
-      const endpoint = isLogin ? "/api/login" : "/api/signup";
+      const endpoint = isLogin ? "http://localhost:5000/api/login" : "http://localhost:5000/api/signup";
       const payload = isLogin
         ? { email, password }
         : { email, password, full_name, role: "user" };
